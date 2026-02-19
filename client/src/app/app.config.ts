@@ -2,34 +2,54 @@ import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalE
 import { provideRouter, withViewTransitions } from '@angular/router';
 
 import { routes } from './app.routes';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { InitService } from '../core/services/init-service';
 import { lastValueFrom } from 'rxjs';
+import { jwtInterceptor } from './core/interceptors/jwt-interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideRouter(routes,withViewTransitions()),
-    provideHttpClient(),
-    provideAppInitializer(async () =>{
-
-      return new Promise<void>((resolve)=>{
-        setTimeout(async ()=>{
-           try{
-        return lastValueFrom(initService.init());
-      }finally{
-        const splash=document.getElementById('initial-splash');
-        if(splash){
+    provideHttpClient(withInterceptors([jwtInterceptor])),
+     InitService, 
+    provideAppInitializer(() => {
+      const initService = inject(InitService);
+      
+      return new Promise<void>((resolve) => {
+    setTimeout(async () => {
+      try {
+        await lastValueFrom(initService.init());
+      } finally {
+        const splash = document.getElementById('initial-splash');
+        if (splash) {
           splash.remove();
         }
-        resolve()
+        resolve();
       }
+    }, 500);
+  });
+})
+    // provideAppInitializer(async () =>{
 
-        },500)
-      })
-      const initService = inject(InitService);
+    //   return new Promise<void>((resolve)=>{
+    //     setTimeout(async ()=>{
+    //        try{
+    //     return lastValueFrom(initService.init());
+    //   }finally{
+    //     const splash=document.getElementById('initial-splash');
+    //     if(splash){
+    //       splash.remove();
+    //     }
+    //     resolve()
+    //   }
+
+    //     },500)
+    //   })
+    //   const initService = inject(InitService);
      
-    })
+    // })
+
   ]
 };
