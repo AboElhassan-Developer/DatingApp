@@ -15,6 +15,7 @@ public class MemberRepositroy(AppDbContext context) : IMemberRepositroy
     public async Task<Member?> GetMemberForUpdate(string id){
          return await context.Members
          .Include(x=>x.User)
+         .Include(x=>x.Photos)
          .SingleOrDefaultAsync(x=>x.Id==id);
     }
 

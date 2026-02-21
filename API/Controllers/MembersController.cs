@@ -8,47 +8,113 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-   [Authorize]
-    public class MembersController(IMemberRepositroy memberRepositroy) : BaseApiController
+    [Authorize]
+    public class MembersController(IMemberRepositroy memberRepositroy, IPhotoService photoService) : BaseApiController
     {
         [HttpGet]
-         public async Task<ActionResult<IReadOnlyList<Member>>> GetMembers()
+        public async Task<ActionResult<IReadOnlyList<Member>>> GetMembers()
         {
             return Ok(await memberRepositroy.GetMembersAsync());
         }
 
         [HttpGet("{id}")]
-        
-        public async Task <ActionResult<Member>> GetMember(string id)
+
+        public async Task<ActionResult<Member>> GetMember(string id)
         {
-            var member =await memberRepositroy.GetMemberByIdAsync(id);
-            if(member == null) return NotFound();
+            var member = await memberRepositroy.GetMemberByIdAsync(id);
+            if (member == null) return NotFound();
             return member;
         }
 
         [HttpGet("{id}/photos")]
-        public async Task <ActionResult<IReadOnlyList<Photo>>>GetMemberPhotos(string id)
+        public async Task<ActionResult<IReadOnlyList<Photo>>> GetMemberPhotos(string id)
         {
             return Ok(await memberRepositroy.GetPhotosForMemberAsync(id));
         }
 
-    [HttpPut]
-    public async Task<ActionResult> UpdateMember(MemberUpdateDto memberUpdateDto)
-    {
-      var memberId = User.GetMemberId();
-      
-      var member = await memberRepositroy.GetMemberForUpdate(memberId);
-      if (member == null) return BadRequest("Could not get member"); 
+        [HttpPut]
+        public async Task<ActionResult> UpdateMember(MemberUpdateDto memberUpdateDto)
+        {
+            var memberId = User.GetMemberId();
 
-      member.DisplayName = memberUpdateDto.DisplayName ?? member.DisplayName;
-      member.Description = memberUpdateDto.Description ?? member.Description;
-      member.City = memberUpdateDto.City ?? member.City;
-      member.Country = memberUpdateDto.Country ?? member.Country;
+            var member = await memberRepositroy.GetMemberForUpdate(memberId);
+            if (member == null) return BadRequest("Could not get member");
 
-        member.User.DisplayName=memberUpdateDto.DisplayName?? member.User.DisplayName;
-      memberRepositroy.Update(member);
-      if (await memberRepositroy.SaveAllAsync()) return NoContent();
-      return BadRequest("Failed to update member");
+            member.DisplayName = memberUpdateDto.DisplayName ?? member.DisplayName;
+            member.Description = memberUpdateDto.Description ?? member.Description;
+            member.City = memberUpdateDto.City ?? member.City;
+            member.Country = memberUpdateDto.Country ?? member.Country;
+
+            member.User.DisplayName = memberUpdateDto.DisplayName ?? member.User.DisplayName;
+            memberRepositroy.Update(member);
+            if (await memberRepositroy.SaveAllAsync()) return NoContent();
+            return BadRequest("Failed to update member");
+        }
+
+        [HttpPost("add-photo")]
+        public async Task<ActionResult<Photo>> AddPhoto(IFormFile file)
+        {
+
+            var member = await memberRepositroy.GetMemberForUpdate(User.GetMemberId());
+            if (member == null) return BadRequest("Cannot update member");
+            var result = await photoService.UploadPhotoAsync(file);
+            if (result.Error != null) return BadRequest(result.Error.Message);
+            var photo = new Photo
+            {
+                Url = result.SecureUrl.AbsoluteUri,
+                PublicId = result.PublicId,
+                MemberId = User.GetMemberId()
+            };
+
+            if (member.ImageUrl == null)
+            {
+
+                member.ImageUrl = photo.Url;
+                member.User.ImageUrl = photo.Url;
+            }
+            member.Photos.Add(photo);
+
+            if (await memberRepositroy.SaveAllAsync()) return photo;
+            return BadRequest("Problem adding photo");
+
+        }
+
+        [HttpPut("set-main-photo/{photoId}")]
+        public async Task<ActionResult> SetMainPhoto(int photoId)
+        {
+            var member = await memberRepositroy.GetMemberForUpdate(User.GetMemberId());
+            if (member == null) return BadRequest("Cannot get member from token");
+            var photo = member.Photos.SingleOrDefault(x => x.Id == photoId);
+            if (member.ImageUrl == photo?.Url || photo == null)
+            {
+                return BadRequest("Cannot set main photo");
+            }
+            member.ImageUrl = photo.Url;
+            member.User.ImageUrl = photo.Url;
+
+            if (await memberRepositroy.SaveAllAsync()) return NoContent();
+            return BadRequest("Failed to set main photo");
+        }
+
+        [HttpDelete("delete-photo/{photoId}")]
+        public async Task<ActionResult> DeletePhoto(int photoId)
+        {
+            var member = await memberRepositroy.GetMemberForUpdate(User.GetMemberId());
+            if (member == null) return BadRequest("Cannot get member from token");
+            var photo = member.Photos.SingleOrDefault(x => x.Id == photoId);
+            if (photo == null || photo.Url == member.ImageUrl)
+            {
+                return BadRequest("Cannot delete main photo");
+            }
+            if (photo.PublicId != null)
+            {
+                var result = await photoService.DeletePhotoAsync(photo.PublicId);
+                if (result.Error != null) return BadRequest(result.Error.Message);
+            }
+            member.Photos.Remove(photo);
+            if (await memberRepositroy.SaveAllAsync()) return Ok();
+            return BadRequest("Failed to delete photo");
+
+        }
     }
-  }
 }
