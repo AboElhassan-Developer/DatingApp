@@ -20,12 +20,20 @@ public class AccountController(AppDbContext context, ITokenService tokenService)
       using  var hmac =new HMACSHA512();
        var user =new AppUser
        {
-           DisplayName =registerDto.DisplayName,
-           Email =registerDto.Email,
-           passwordHash =hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
-           passwordSalt= hmac.Key
+           DisplayName = registerDto.DisplayName,
+           Email = registerDto.Email,
+           passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
+           passwordSalt = hmac.Key,
+           Member = new Member
+           {
+               DisplayName = registerDto.DisplayName,
+               Gender = registerDto.Gender,
+               City = registerDto.City,
+               Country = registerDto.Country,
+               DateOfBirth=registerDto.DateOfBirth
+           }
        };
-       context.Users.Add(user);
+        context.Users.Add(user);
        await context.SaveChangesAsync();
        return user.ToDto(tokenService);
     }
