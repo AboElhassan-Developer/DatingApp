@@ -5,6 +5,7 @@ using API.Interfaces;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using API.Helpers;
 
 namespace API.Controllers
 {
@@ -12,9 +13,13 @@ namespace API.Controllers
     public class MembersController(IMemberRepositroy memberRepositroy, IPhotoService photoService) : BaseApiController
     {
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<Member>>> GetMembers()
+        public async Task<ActionResult<IReadOnlyList<Member>>> GetMembers(
+            [FromQuery] MemberParams memberParams 
+
+            )
         {
-            return Ok(await memberRepositroy.GetMembersAsync());
+            memberParams.CurrentMemberId = User.GetMemberId();
+            return Ok(await memberRepositroy.GetMembersAsync(memberParams));
         }
 
         [HttpGet("{id}")]
