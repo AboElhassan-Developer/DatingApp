@@ -1,4 +1,4 @@
-import { HttpEvent, HttpInterceptorFn, HttpParams } from '@angular/common/http';
+import { HttpEvent, HttpInterceptorFn, HttpParams, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { BusyService } from '../../../core/services/busy-service';
 import { delay, finalize, of, tap } from 'rxjs';
@@ -28,6 +28,9 @@ export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
   if (req.method.includes('POST') && req.url.includes('/likes')) {
     invalidateCache('/likes')
   }
+  if (req.method.includes('POST') && req.url.includes('/messages')) {
+    invalidateCache('/messages')
+  }
 
   if (req.method === 'GET') {
     const cachedResponse = cache.get(cacheKey);
@@ -40,9 +43,11 @@ export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
   busyService.busy();
   return next(req).pipe(
     delay(500),
-    tap(response => {
-      cache.set(cacheKey, response)
-    }),
+   tap(response => {
+  if (response instanceof HttpResponse) { 
+    cache.set(cacheKey, response);
+  }
+}),
     finalize(() => {
       busyService.idle()
     })

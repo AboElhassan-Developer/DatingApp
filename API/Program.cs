@@ -20,6 +20,7 @@ builder.Services.AddCors();
 builder.Services.AddScoped<ITokenService,TokenService>();
 builder.Services.AddScoped<IPhotoService,PhotoService>();
 builder.Services.AddScoped<IMemberRepositroy,MemberRepositroy>();
+builder.Services.AddScoped<IMessageRepositroy,MessageRepositroy>();
 builder.Services.AddScoped<ILikesRepositroy,LikesRepositroy>();
 builder.Services.AddScoped<LogUserActivity>();
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
