@@ -10,8 +10,8 @@ using Microsoft.AspNetCore.SignalR;
 namespace API.SignalR
 {
     [Authorize]
-    public class MessageHub(IMessageRepositroy messageRepositroy,IMemberRepositroy memberRepositroy
-        ,IHubContext<PresenceHub> presenceHub):Hub
+    public class MessageHub(IUnitOfWork uow
+        , IHubContext<PresenceHub> presenceHub):Hub
     {
         public override async Task OnConnectedAsync()
         {
@@ -22,7 +22,7 @@ namespace API.SignalR
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
                 await AddToGroup(groupName);
 
-            var messages = await messageRepositroy.GetMessageThread(GetUserId(), otherUser);
+            var messages = await uow.MessageRepositroy.GetMessageThread(GetUserId(), otherUser);
 
 
                 await Clients.Group(groupName).SendAsync("ReceiveMessageThread", messages);
@@ -30,8 +30,8 @@ namespace API.SignalR
 
         public async Task SendMessage(CreateMessageDto createMessageDto)
         {
-            var sender = await memberRepositroy.GetMemberByIdAsync(GetUserId());
-            var recipient = await memberRepositroy.GetMemberByIdAsync(createMessageDto.RecipientId);
+            var sender = await uow.MemberRepository.GetMemberByIdAsync(GetUserId());
+            var recipient = await uow.MemberRepository.GetMemberByIdAsync(createMessageDto.RecipientId);
 
             if (recipient == null || sender == null || sender.Id == createMessageDto.RecipientId)
                 throw new HubException("Cannot send this message");
@@ -44,16 +44,16 @@ namespace API.SignalR
             };
 
             var groupName = GetGroupName(sender.Id, recipient.Id);
-            var group = await messageRepositroy.GetMessageGroup(groupName);
+            var group = await uow.MessageRepositroy.GetMessageGroup(groupName);
             var userInGroup = group != null && group.Connections.Any(x => x.UserId == recipient.Id);
             if (userInGroup)
                 {
                     message.DateRead = DateTime.UtcNow;
             }
 
-            messageRepositroy.AddMessage(message);
+            uow.MessageRepositroy.AddMessage(message);
 
-            if(await messageRepositroy.SaveAllAsync())
+            if(await uow.Complete())
             {
               
                 await Clients.Group(groupName).SendAsync("NewMessage", message.ToDto());
@@ -68,22 +68,22 @@ namespace API.SignalR
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            await messageRepositroy.RemoveConnection(Context.ConnectionId);
+            await uow.MessageRepositroy.RemoveConnection(Context.ConnectionId);
            await base.OnDisconnectedAsync(exception);
         }
 
         private async Task<bool> AddToGroup ( string groupName)
         {
-            var group = await messageRepositroy.GetMessageGroup(groupName);
+            var group = await uow.MessageRepositroy.GetMessageGroup(groupName);
             var connection = new Connection(Context.ConnectionId, GetUserId());
             
             if (group == null)
             {
                 group = new Group(groupName);
-                messageRepositroy.AddGroup(group);
+                uow.MessageRepositroy.AddGroup(group);
             }
             group.Connections.Add(connection);
-            return await messageRepositroy.SaveAllAsync();
+            return await uow.Complete();
         }
 
         private static string GetGroupName(string? caller, string? other)

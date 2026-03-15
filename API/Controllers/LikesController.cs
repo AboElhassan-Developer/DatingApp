@@ -5,14 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-    public class LikesController(ILikesRepositroy likesRepositroy) : BaseApiController
+    public class LikesController(IUnitOfWork uow) : BaseApiController
     {
         [HttpPost("{targetMemberId}")]
         public async Task<ActionResult> ToggleLike(string targetMemberId)
         {
            var sourceMemberId = User.GetMemberId();
             if (sourceMemberId == targetMemberId) return BadRequest("You cannot like yourself");
-            var existingLike = await likesRepositroy.GetMemberLike(sourceMemberId, targetMemberId);
+            var existingLike = await uow.LikesRepositroy.GetMemberLike(sourceMemberId, targetMemberId);
             if (existingLike == null)
             {
                 var like = new MemberLike
@@ -20,21 +20,21 @@ namespace API.Controllers
                     SourceMemberId = sourceMemberId,
                     TargetMemberId = targetMemberId
                 };
-                likesRepositroy.AddLike(like);
+                uow.LikesRepositroy.AddLike(like);
             }
             else
             {
-                likesRepositroy.DeleteLike(existingLike);
+                uow.LikesRepositroy.DeleteLike(existingLike);
             }
 
-            if (await likesRepositroy.SaveAllChanges()) return Ok();
+            if (await uow.Complete()) return Ok();
             return BadRequest("Failed to update like");
         }
 
         [HttpGet("list")]
         public async Task<ActionResult<IReadOnlyList<string>>> GetCurrentMemberLikeIds()
         {
-            return Ok(await likesRepositroy.GetCurrentMemberLikeIds(User.GetMemberId()));
+            return Ok(await uow.LikesRepositroy.GetCurrentMemberLikeIds(User.GetMemberId()));
 
         }
 
@@ -43,7 +43,7 @@ namespace API.Controllers
            [FromQuery] LikesParams likesParams)
         {
             likesParams.MemberId = User.GetMemberId();
-            var members = await likesRepositroy.GetMemberLikes(likesParams);
+            var members = await uow.LikesRepositroy.GetMemberLikes(likesParams);
             return Ok(members);
 
         }

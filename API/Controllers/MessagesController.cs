@@ -7,14 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-    public class MessagesController(IMessageRepositroy messageRepositroy,
-        IMemberRepositroy memberRepositroy) : BaseApiController
+    public class MessagesController(IUnitOfWork uow) : BaseApiController
     {
         [HttpPost]
         public async Task<ActionResult> CreateMessage(CreateMessageDto createMessageDto)
         {
-            var sender = await memberRepositroy.GetMemberByIdAsync(User.GetMemberId());
-            var recipient = await memberRepositroy.GetMemberByIdAsync(createMessageDto.RecipientId);
+            var sender = await uow.MemberRepository.GetMemberByIdAsync(User.GetMemberId());
+            var recipient = await uow.MemberRepository.GetMemberByIdAsync(createMessageDto.RecipientId);
 
             if (recipient == null || sender == null || sender.Id == createMessageDto.RecipientId)
                 return BadRequest("Cannot send this message");
@@ -26,10 +25,10 @@ namespace API.Controllers
                 Content = createMessageDto.Content
             };
 
-            messageRepositroy.AddMessage(message);
+            uow.MessageRepositroy.AddMessage(message);
 
 
-            if (await messageRepositroy.SaveAllAsync())
+            if (await uow.Complete())
                 return Ok(message.ToDto());
             return BadRequest("Failed to send message");
         }
@@ -39,12 +38,12 @@ namespace API.Controllers
             ([FromQuery] MessageParams messageParams)
         {
             messageParams.MemberId = User.GetMemberId();
-            return await messageRepositroy.GetMessagesForMember(messageParams);
+            return await uow.MessageRepositroy.GetMessagesForMember(messageParams);
         }
         [HttpGet("thread/{recipientId}")]
         public async Task<ActionResult<IReadOnlyList<MessageDto>>> GetMessageThread(string recipientId)
         {
-           return Ok(await messageRepositroy.GetMessageThread(User.GetMemberId(), recipientId));
+           return Ok(await uow.MessageRepositroy.GetMessageThread(User.GetMemberId(), recipientId));
 
         }
 
@@ -52,7 +51,7 @@ namespace API.Controllers
         public async Task<ActionResult> DeleteMessage(string id)
         {
             var memberId = User.GetMemberId();
-            var message = await messageRepositroy.GetMessage(id);
+            var message = await uow.MessageRepositroy.GetMessage(id);
             if (message == null) return BadRequest("Cannot delete this message");
             if (message.SenderId != memberId && message.RecipientId != memberId)
                 return BadRequest("yYu Cannot delete this message");
@@ -62,10 +61,10 @@ namespace API.Controllers
 
             if (message is { SenderDeleted: true, RecipientDeleted: true })
             {
-                messageRepositroy.DeleteMessage(message);
+                uow.MessageRepositroy.DeleteMessage(message);
             }
 
-            if (await messageRepositroy.SaveAllAsync()) return Ok();
+            if (await uow.Complete()) return Ok();
 
             return BadRequest("Failed to delete the message");
 

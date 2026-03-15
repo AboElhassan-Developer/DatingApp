@@ -10,7 +10,7 @@ namespace API.Interfaces
         Task<IReadOnlyList<String>> GetCurrentMemberLikeIds(string memberId);
         void DeleteLike(MemberLike like);
         void AddLike(MemberLike like);
-        Task<bool> SaveAllChanges();
+     
 
     }
 }
