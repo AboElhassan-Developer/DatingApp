@@ -73,7 +73,17 @@ public class Seed
         {
             UserName = "admin",
             Email = "admin@test.com",
-            DisplayName = "Admin"
+            DisplayName = "Admin",
+             Member = new Member  
+    {
+        DisplayName = "Admin",
+        Gender = "male",
+        City = "Admin City",
+        Country = "Egypt",
+       DateOfBirth = new DateOnly(1990, 1, 1),
+        Created = DateTime.UtcNow,
+        LastActive = DateTime.UtcNow
+    }
 
         };
         await userManager.CreateAsync(admin, "Pa$$w0rd");
