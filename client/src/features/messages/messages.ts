@@ -6,6 +6,7 @@ import { Paginator } from '../../shared/paginator/paginator';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog-service';
+import { PresenceService } from '../../core/services/presence-service';
 
 @Component({
   selector: 'app-messages',
@@ -16,12 +17,12 @@ import { ConfirmDialogService } from '../../core/services/confirm-dialog-service
 export class Messages implements OnInit {
   private messageService = inject(MessageService);
   private confirmDialog = inject(ConfirmDialogService);
+  private presenceService = inject(PresenceService);
   protected container = 'Inbox';
   protected fetchedContainer= 'Inbox';
   protected pageNumber = 1;
   protected pageSize = 10;
   protected paginatedMessages = signal<PaginatedResult<Message> | null>(null);
-
 
   tabs = [
     { label: 'Inbox', value: 'Inbox' },
@@ -30,6 +31,9 @@ export class Messages implements OnInit {
 
   ngOnInit(): void {
     this.loadMessages();
+    this.presenceService.hubConnection?.on('NewMessageReceived', () => {
+      if (this.container === 'Inbox') this.loadMessages();
+    });
   }
 
   loadMessages() {
@@ -48,7 +52,6 @@ export class Messages implements OnInit {
   }
 
   deleteMessage( id: string) {
-   
     this.messageService.deleteMessage(id).subscribe({
       next: () => {
         const current = this.paginatedMessages();
@@ -76,10 +79,9 @@ export class Messages implements OnInit {
     this.loadMessages();
   }
 
-   onPageChange(event: { pageNumber: number, pageSize: number }) {
+  onPageChange(event: { pageNumber: number, pageSize: number }) {
     this.pageSize = event.pageSize;
     this.pageNumber = event.pageNumber;
     this.loadMessages();
   }
-
 }
