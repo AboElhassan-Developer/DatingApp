@@ -22,8 +22,9 @@ public class MemberRepositroy(AppDbContext context) : IMemberRepositroy
 
     public async Task<PaginatedResult<Member>> GetMembersAsync(MemberParams memberParams)
     {
-        var query=context.Members.AsQueryable();
+        var query = context.Members.Include(x => x.User).AsQueryable();
         query=query.Where(x=>x.Id!=memberParams.CurrentMemberId);
+        query = query.Where(x => x.User.UserName != "admin");
         if (memberParams.Gender != null)
         {
             query = query.Where(x => x.Gender == memberParams.Gender);
