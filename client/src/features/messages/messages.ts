@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { MessageService } from '../../core/services/message-service';
 import { PaginatedResult } from '../../types/pagination';
 import { Message } from '../../types/message';
@@ -24,18 +24,25 @@ export class Messages implements OnInit {
   protected pageSize = 10;
   protected paginatedMessages = signal<PaginatedResult<Message> | null>(null);
 
+constructor() {
+    effect(() => {
+      const message = this.presenceService.newMessageReceived();
+      if (message && this.container === 'Inbox') {
+        this.loadMessages();
+      }
+    });
+  }
+
+
+
   tabs = [
     { label: 'Inbox', value: 'Inbox' },
     {label: 'Outbox', value:'Outbox'},
   ]
 
-  ngOnInit(): void {
+    ngOnInit(): void {
     this.loadMessages();
-    this.presenceService.hubConnection?.on('NewMessageReceived', () => {
-      if (this.container === 'Inbox') this.loadMessages();
-    });
   }
-
   loadMessages() {
     this.messageService.getMessages(this.container, this.pageNumber, this.pageSize).subscribe({
       next: response => {

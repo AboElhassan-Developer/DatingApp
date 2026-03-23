@@ -13,7 +13,7 @@ export class PresenceService {
   private toast = inject(ToastService);
   hubConnection?: HubConnection;
   onlineUsers = signal<string[]>([]);
-
+ newMessageReceived = signal<Message | null>(null);
   createHubConnection(user: User) {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(this.hubUrl + 'presence', {
@@ -26,6 +26,7 @@ export class PresenceService {
     .catch(error =>console.log(error));
     
     this.hubConnection.on('UserOnline', userId => {
+      
       this.onlineUsers.update(users =>[...users,userId])
     })
 
@@ -37,6 +38,7 @@ export class PresenceService {
       this.onlineUsers.set(userIds);
     })
     this.hubConnection.on('NewMessageReceived', (message: Message) => {
+       this.newMessageReceived.set(message);
       this.toast.info(message.senderDisplayName + ' has sent you a new message',
         10000,message.senderImageUrl,`/members/${message.senderId}/messages`
       );
