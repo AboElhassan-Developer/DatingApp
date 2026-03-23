@@ -1,10 +1,9 @@
-<div class="flex items-center w-full gap-3 py-3 mt-2">
+<div class="flex flex-wrap items-center w-full gap-3 py-3 mt-2">
     <span>Items per page:</span>
     <select class="select w-24" (change)="onPageChange(undefined, $event.target)">
         @for(size of pageSizeOptions(); track $index){
             <option [value]="size" [selected]="size === pageSize()">{{size}}</option>
         }
-
     </select>
 
     <div class="text-sm">
@@ -26,5 +25,4 @@
          &rarr;
         </button>
      </div>
-
 </div>

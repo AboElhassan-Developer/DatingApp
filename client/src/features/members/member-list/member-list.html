@@ -1,36 +1,28 @@
 <div class="mt-15">
     @if(paginatedMembers(); as paginatedResult){
-    <div class="flex flex-col w-full">
-        <div class="flex justify-between items-center">
-            <div class="flex gap-3 items-center">
-                <button (click)="openModal()" class="btn btn-primary">Select Filters</button>
-                <button (click)="resetFilters()" class="btn btn-neutral">Reset Filters</button>
-              <div class="text-lg bg-base-100 py-2 px-4 border-1 rounded-lg text-primary capitalize">
-                   {{displayMessage}}
-              </div>
+    <div class="flex flex-col w-full gap-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="flex flex-wrap gap-2 items-center">
+                <button (click)="openModal()" class="btn btn-primary btn-sm md:btn-md">Select Filters</button>
+                <button (click)="resetFilters()" class="btn btn-neutral btn-sm md:btn-md">Reset Filters</button>
+                <div class="text-sm md:text-lg bg-base-100 py-2 px-4 border-1 rounded-lg text-primary capitalize">
+                    {{displayMessage}}
+                </div>
             </div>
             @if(paginatedResult.metadata; as metadata){
             <app-paginator [pageNumber]="metadata.currentPage" [totalCount]="metadata.totalCount"
                 [totalPages]="metadata.totalPages" [pageSize]="metadata.pageSize" (pageChange)="onPageChange($event)" />
             }
-
         </div>
-         @if(paginatedResult.items; as members){
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        @for (member of members; track member.id){
-
-        <app-member-card [member]="member" />
-
+        @if(paginatedResult.items; as members){
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6">
+            @for (member of members; track member.id){
+            <app-member-card [member]="member" />
+            }
+        </div>
         }
     </div>
     }
-    </div>
-
-
-
-   
-    }
-
 </div>
 
 <app-filter-modal

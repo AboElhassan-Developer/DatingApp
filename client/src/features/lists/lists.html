@@ -1,7 +1,7 @@
 @if(paginatedResult(); as paginatedResult) {
-  <div class="flex flex-col w-full">
+  <div class="flex flex-col w-full gap-4">
 
-    <div class="flex justify-between items-center">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div class="tabs tabs-box tabs-lg text-primary w-fit">
         @for(tab of tabs; track $index) {
           <button role="tab" class="tab"
@@ -26,7 +26,7 @@
 
     @if(paginatedResult.items; as members) {
       @if(members.length > 0) {
-        <div class="grid grid-cols-5 gap-6 mt-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6 mt-3">
           @for(member of members; track member.id) {
             <app-member-card [member]="member"/>
           }
