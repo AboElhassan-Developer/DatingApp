@@ -2,6 +2,11 @@
 
 > A full-stack dating web application built with **ASP.NET Core** & **Angular** — featuring real-time messaging, photo management, likes system, and role-based administration.
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Azure-blue?style=for-the-badge&logo=microsoft-azure)](https://dating-app.azurewebsites.net/)
+[![Demo Video](https://img.shields.io/badge/Demo%20Video-Watch%20Now-red?style=for-the-badge&logo=youtube)](https://youtu.be/sEOz4jKxHac)
+[![.NET](https://img.shields.io/badge/.NET-8.0-purple?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
+[![Angular](https://img.shields.io/badge/Angular-19-red?style=for-the-badge&logo=angular)](https://angular.io/)
+
 ---
 
 ## ✨ Features
@@ -129,7 +134,7 @@ Dating Application/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/dating-application.git
+git clone https://github.com/AboElhassan-Developer/DatingApp.git
 cd dating-application
 ```
 
